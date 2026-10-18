@@ -2,63 +2,118 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Finanzplaner</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg">
-<meta name="theme-color" content="#0f766e">
+<meta name="theme-color" content="#f4f5f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b0b0d" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <style>
-  :root { --bg:#f6f7f9; --card:#fff; --fg:#111; --muted:#666; --plus:#15803d; --minus:#b91c1c; --accent:#0f766e; }
-  @media (prefers-color-scheme: dark) { :root { --bg:#111; --card:#1c1c1e; --fg:#eee; --muted:#999; --plus:#4ade80; --minus:#f87171; } }
-  * { box-sizing: border-box; }
-  body { margin:0; font:16px system-ui, sans-serif; background:var(--bg); color:var(--fg); }
-  main { max-width:600px; margin:auto; padding:16px; }
-  .card { background:var(--card); border-radius:12px; padding:16px; margin-bottom:16px; }
-  form { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-  input, select, button { font:inherit; padding:10px; border-radius:8px; border:1px solid #8884; background:var(--bg); color:var(--fg); width:100%; }
-  button { background:var(--accent); color:#fff; border:0; }
+  :root { --bg:#f4f5f7; --card:#fff; --field:#f0f1f4; --fg:#111; --muted:#6b7280; --line:#0000000f;
+          --plus:#15803d; --minus:#dc2626; --accent:#0f766e; --accent-soft:#0f766e1a; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#0b0b0d; --card:#18181b; --field:#232327; --fg:#f4f4f5; --muted:#a1a1aa; --line:#ffffff12;
+            --plus:#4ade80; --minus:#f87171; --accent:#14b8a6; --accent-soft:#14b8a626; }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; font:16px/1.4 system-ui, -apple-system, sans-serif; background:var(--bg); color:var(--fg); -webkit-tap-highlight-color:transparent; }
+  main { max-width:560px; margin:auto; padding:max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom)); }
+  header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:8px 0 16px; }
+  h1 { font-size:1.6em; margin:0; letter-spacing:-.02em; }
+  h2 { font-size:.8em; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:0 0 8px; font-weight:600; }
+  .card { background:var(--card); border-radius:20px; padding:16px; margin-bottom:12px; }
+
+  input, button { font:inherit; color:var(--fg); }
+  .field { width:100%; min-width:0; padding:12px 14px; border-radius:12px; border:0; background:var(--field); outline:none; }
+  .field:focus { box-shadow:0 0 0 2px var(--accent); }
+  .field::placeholder { color:var(--muted); }
+  /* iOS: Datumsfelder ignorieren sonst die Breite und ragen über den Rand */
+  input[type=date], input[type=month] { -webkit-appearance:none; appearance:none; display:block; min-height:46px; }
+  input::-webkit-date-and-time-value { text-align:left; }
+  #month { width:auto; padding:8px 12px; min-height:0; font-weight:600; }
+
+  form { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   .full { grid-column:1 / -1; }
-  .sum { display:flex; justify-content:space-between; text-align:center; }
-  .sum b { display:block; font-size:1.2em; }
+  .seg { display:grid; grid-template-columns:1fr 1fr; background:var(--field); border-radius:12px; padding:4px; }
+  .seg input { position:absolute; opacity:0; pointer-events:none; }
+  .seg span { display:block; text-align:center; padding:8px; border-radius:9px; color:var(--muted); font-weight:500; transition:.15s; }
+  .seg input:checked + span { background:var(--card); color:var(--fg); box-shadow:0 1px 3px #0003; }
+  .seg input:focus-visible + span { box-shadow:0 0 0 2px var(--accent); }
+  #amount { font-size:2em; font-weight:700; text-align:center; padding:14px; }
+  .btn { padding:14px; border:0; border-radius:12px; background:var(--accent); color:#fff; font-weight:600; cursor:pointer; }
+  .btn:active { transform:scale(.98); }
+  .btn.ghost { background:var(--accent-soft); color:var(--accent); flex:1; padding:12px; }
+
+  .hero { text-align:center; padding:8px 0 16px; }
+  .hero small { color:var(--muted); }
+  .hero b { display:block; font-size:2.4em; letter-spacing:-.02em; }
+  .split { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .split div { background:var(--field); border-radius:12px; padding:10px 12px; font-size:.85em; color:var(--muted); }
+  .split b { display:block; font-size:1.25em; }
+
   ul { list-style:none; padding:0; margin:0; }
-  li { display:flex; gap:8px; align-items:center; padding:8px 0; border-bottom:1px solid #8882; }
-  li .t { flex:1; } li small { color:var(--muted); display:block; }
-  li .del { width:auto; background:none; color:var(--muted); padding:4px 8px; }
+  li { display:flex; gap:12px; align-items:center; padding:10px 0; border-bottom:1px solid var(--line); }
+  li:last-child { border-bottom:0; }
+  .t { flex:1; min-width:0; } .t small { color:var(--muted); display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .av { width:38px; height:38px; flex:none; border-radius:50%; display:grid; place-items:center; font-weight:700; background:var(--accent-soft); color:var(--accent); }
+  .amt { font-weight:600; white-space:nowrap; }
+  .del { background:none; border:0; color:var(--muted); padding:6px; cursor:pointer; }
+  .bar { height:6px; border-radius:3px; background:var(--field); margin-top:6px; overflow:hidden; }
+  .bar i { display:block; height:100%; border-radius:3px; }
+  .donut { position:relative; width:200px; margin:4px auto 16px; }
+  .ring { aspect-ratio:1; border-radius:50%; -webkit-mask:radial-gradient(farthest-side, #0000 64%, #000 65%); mask:radial-gradient(farthest-side, #0000 64%, #000 65%); }
+  .donut .c { position:absolute; inset:0; display:grid; place-content:center; text-align:center; }
+  .donut small { color:var(--muted); } .donut b { font-size:1.4em; }
+  .dot { width:10px; height:10px; border-radius:50%; flex:none; }
+  .pct { color:var(--muted); font-size:.85em; font-weight:400; }
+  .empty { color:var(--muted); justify-content:center; padding:24px 0; }
   .plus { color:var(--plus); } .minus { color:var(--minus); }
-  .row { display:flex; gap:8px; }
+  .row { display:flex; gap:10px; }
 </style>
 </head>
 <body>
 <main>
-  <h1>Finanzplaner</h1>
+  <header>
+    <h1>Finanzplaner</h1>
+    <input id="month" class="field" type="month" aria-label="Monat">
+  </header>
+
+  <div class="card">
+    <h2>Ausgaben nach Kategorie</h2>
+    <div class="donut"><div id="ring" class="ring" role="img"></div><div class="c"><small>Ausgaben</small><b id="outC"></b></div></div>
+    <ul id="bycat"></ul>
+  </div>
+
+  <div class="card">
+    <div class="hero"><small>Saldo</small><b id="bal"></b></div>
+    <div class="split">
+      <div>Einnahmen<b id="in" class="plus"></b></div>
+      <div>Ausgaben<b id="out" class="minus"></b></div>
+    </div>
+  </div>
 
   <div class="card">
     <form id="f">
-      <select name="type" aria-label="Art"><option value="-1">Ausgabe</option><option value="1">Einnahme</option></select>
-      <input name="amount" type="number" step="0.01" min="0.01" inputmode="decimal" placeholder="Betrag €" required aria-label="Betrag">
-      <input name="cat" list="cats" placeholder="Kategorie" required aria-label="Kategorie">
-      <input name="date" type="date" required aria-label="Datum">
-      <input name="note" class="full" placeholder="Notiz (optional)" aria-label="Notiz">
-      <button class="full">Hinzufügen</button>
+      <div class="seg full" role="radiogroup" aria-label="Art">
+        <label><input type="radio" name="type" value="-1" checked><span>Ausgabe</span></label>
+        <label><input type="radio" name="type" value="1"><span>Einnahme</span></label>
+      </div>
+      <input id="amount" name="amount" class="field full" type="number" step="0.01" min="0.01" inputmode="decimal" placeholder="0,00 €" required aria-label="Betrag">
+      <input name="cat" class="field" list="cats" placeholder="Kategorie" required aria-label="Kategorie">
+      <input name="date" class="field" type="date" required aria-label="Datum">
+      <input name="note" class="field full" placeholder="Notiz (optional)" aria-label="Notiz">
+      <button class="btn full">Hinzufügen</button>
     </form>
     <datalist id="cats"></datalist>
   </div>
 
-  <div class="card">
-    <input id="month" type="month" aria-label="Monat">
-    <div class="sum" style="margin-top:12px">
-      <div>Einnahmen<b id="in" class="plus"></b></div>
-      <div>Ausgaben<b id="out" class="minus"></b></div>
-      <div>Saldo<b id="bal"></b></div>
-    </div>
-    <ul id="bycat" style="margin-top:12px"></ul>
-  </div>
+  <div class="card"><h2>Einträge</h2><ul id="list"></ul></div>
 
-  <div class="card"><ul id="list"></ul></div>
-
-  <div class="card row">
-    <button id="exp">Backup exportieren</button>
-    <button id="imp">Backup importieren</button>
+  <div class="row">
+    <button id="exp" class="btn ghost">Backup exportieren</button>
+    <button id="imp" class="btn ghost">Backup importieren</button>
     <input id="file" type="file" accept=".json" hidden>
   </div>
 </main>
@@ -71,13 +126,15 @@ const eur = n => n.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' 
 const $ = id => document.getElementById(id);
 const today = new Date().toLocaleDateString('sv'); // lokales YYYY-MM-DD, nicht UTC
 const DEFAULT_CATS = ['Lebensmittel', 'Miete', 'Transport', 'Restaurant', 'Freizeit', 'Kleidung', 'Gesundheit', 'Abos', 'Versicherung', 'Gehalt', 'Sonstiges'];
+// ponytail: Farben wiederholen sich ab der 9. Kategorie
+const COLORS = ['#14b8a6', '#3b82f6', '#a855f7', '#f59e0b', '#ec4899', '#84cc16', '#f97316', '#06b6d4'];
 const f = $('f');
 f.date.value = today;
 $('month').value = today.slice(0, 7);
 
 function render() {
   const m = $('month').value;
-  const mi = items.filter(i => i.date.startsWith(m)).sort((a, b) => b.date.localeCompare(a.date));
+  const mi = items.filter(i => i.date.startsWith(m)).sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
   const inc = mi.filter(i => i.amount > 0).reduce((s, i) => s + i.amount, 0);
   const out = mi.filter(i => i.amount < 0).reduce((s, i) => s - i.amount, 0);
   $('in').textContent = eur(inc); $('out').textContent = eur(out);
@@ -86,24 +143,36 @@ function render() {
   const cats = {};
   mi.filter(i => i.amount < 0).forEach(i => cats[i.cat] = (cats[i.cat] || 0) - i.amount);
   $('bycat').innerHTML = '';
-  Object.entries(cats).sort((a, b) => b[1] - a[1]).forEach(([c, v]) => {
+  $('outC').textContent = eur(out);
+  const stops = []; let acc = 0;
+  Object.entries(cats).sort((a, b) => b[1] - a[1]).forEach(([c, v], n) => {
+    const col = COLORS[n % COLORS.length], pct = v / out * 100;
+    stops.push(`${col} ${acc}% ${acc += pct}%`);
     const li = document.createElement('li');
-    li.innerHTML = '<span class="t"></span><span class="minus"></span>';
-    li.children[0].textContent = c; li.children[1].textContent = eur(v);
+    li.innerHTML = '<span class="dot"></span><span class="t"><span></span><div class="bar"><i></i></div></span><span class="amt"></span>';
+    li.querySelector('.dot').style.background = li.querySelector('i').style.background = col;
+    li.querySelector('.t span').textContent = c;
+    li.querySelector('i').style.width = pct + '%';
+    li.querySelector('.amt').innerHTML = `<span class="pct">${Math.round(pct)}%</span> `;
+    li.querySelector('.amt').append(eur(v));
     $('bycat').append(li);
   });
+  $('ring').style.background = stops.length ? `conic-gradient(${stops.join(',')})` : 'var(--field)';
+  $('ring').setAttribute('aria-label', Object.entries(cats).map(([c, v]) => `${c}: ${eur(v)}`).join(', ') || 'Keine Ausgaben');
+  if (!out) $('bycat').innerHTML = '<li class="empty">Noch keine Ausgaben in diesem Monat</li>';
 
   $('list').innerHTML = '';
   mi.forEach(i => {
     const li = document.createElement('li');
-    li.innerHTML = '<span class="t"><span></span><small></small></span><span></span><button class="del" aria-label="Löschen">✕</button>';
+    li.innerHTML = '<span class="av"></span><span class="t"><span></span><small></small></span><span class="amt"></span><button class="del" aria-label="Löschen">✕</button>';
+    li.querySelector('.av').textContent = i.cat[0].toUpperCase();
     li.querySelector('.t span').textContent = i.cat;
-    li.querySelector('small').textContent = new Date(i.date).toLocaleDateString('de-DE') + (i.note ? ' · ' + i.note : '');
-    const amt = li.children[1]; amt.textContent = eur(i.amount); amt.className = i.amount > 0 ? 'plus' : 'minus';
+    li.querySelector('small').textContent = new Date(i.date).toLocaleDateString('de-DE', { day: 'numeric', month: 'short' }) + (i.note ? ' · ' + i.note : '');
+    const amt = li.querySelector('.amt'); amt.textContent = (i.amount > 0 ? '+' : '') + eur(i.amount); amt.classList.add(i.amount > 0 ? 'plus' : 'minus');
     li.querySelector('.del').onclick = () => { if (confirm('Eintrag löschen?')) { items = items.filter(x => x !== i); save(); render(); } };
     $('list').append(li);
   });
-  if (!mi.length) $('list').innerHTML = '<li>Keine Einträge in diesem Monat</li>';
+  if (!mi.length) $('list').innerHTML = '<li class="empty">Keine Einträge in diesem Monat</li>';
 
   $('cats').innerHTML = '';
   [...new Set([...DEFAULT_CATS, ...items.map(i => i.cat)])].forEach(c => { const o = document.createElement('option'); o.value = c; $('cats').append(o); });
