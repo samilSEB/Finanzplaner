@@ -69,7 +69,8 @@ let items = JSON.parse(localStorage.getItem(KEY) || '[]');
 const save = () => localStorage.setItem(KEY, JSON.stringify(items));
 const eur = n => n.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
 const $ = id => document.getElementById(id);
-const today = new Date().toISOString().slice(0, 10);
+const today = new Date().toLocaleDateString('sv'); // lokales YYYY-MM-DD, nicht UTC
+const DEFAULT_CATS = ['Lebensmittel', 'Miete', 'Transport', 'Restaurant', 'Freizeit', 'Kleidung', 'Gesundheit', 'Abos', 'Versicherung', 'Gehalt', 'Sonstiges'];
 const f = $('f');
 f.date.value = today;
 $('month').value = today.slice(0, 7);
@@ -105,7 +106,7 @@ function render() {
   if (!mi.length) $('list').innerHTML = '<li>Keine Einträge in diesem Monat</li>';
 
   $('cats').innerHTML = '';
-  [...new Set(items.map(i => i.cat))].forEach(c => { const o = document.createElement('option'); o.value = c; $('cats').append(o); });
+  [...new Set([...DEFAULT_CATS, ...items.map(i => i.cat)])].forEach(c => { const o = document.createElement('option'); o.value = c; $('cats').append(o); });
 }
 
 f.onsubmit = e => {
